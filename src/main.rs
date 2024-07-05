@@ -8,6 +8,7 @@ use axum::response::Response;
 use axum::routing::get_service;
 use axum::{response::Html, routing::get, Router};
 use serde::Deserialize;
+use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 use web::routes_login;
 
@@ -25,6 +26,7 @@ async fn main() {
         .merge(routes_test())
         .merge(web::routes_login::routes())
         .layer(middleware::map_response(main_response_mapper))
+        .layer(CookieManagerLayer::new())
         .fallback_service(routes_static());
 
     let addr = tokio::net::TcpListener::bind("127.0.0.1:8080")

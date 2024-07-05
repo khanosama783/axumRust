@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::{web, Error, Result};
 use axum::Router;
 use axum::{
     body,
@@ -7,13 +7,16 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
+use tower_cookies::{Cookie, Cookies};
 
-async fn api_login(payload: Json<LoginPayload>) -> Result<Json<Value>> {
+async fn api_login(cookies: Cookies, payload: Json<LoginPayload>) -> Result<Json<Value>> {
     println!("=> {:<12} - api_login", "HANDLER");
 
     if payload.username != "username" || payload.password != "password" {
         return Err(Error::LoginFaul);
     }
+
+    cookies.add(Cookie::new(web::AUTH_TOKEN, "user-1.exp.sign"));
 
     let body = Json(json!({
         "result": {
