@@ -13,6 +13,7 @@ use tower_http::services::ServeDir;
 use web::routes_login;
 
 mod error;
+mod model;
 mod web;
 
 #[derive(Debug, Deserialize)]
