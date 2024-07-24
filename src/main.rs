@@ -1,4 +1,3 @@
-#![allow(unused)]
 pub use self::error::{Error, Result};
 use axum::extract::Path;
 use axum::extract::Query;
@@ -7,10 +6,11 @@ use axum::response::IntoResponse;
 use axum::response::Response;
 use axum::routing::get_service;
 use axum::{response::Html, routing::get, Router};
+use model::ModelController;
 use serde::Deserialize;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
-use web::routes_login;
+use web::{routes_login, routes_tickets};
 
 mod error;
 mod model;
@@ -22,10 +22,13 @@ struct HelloParams {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
+    let mc = ModelController::new().await?;
+
     let routes_all = Router::new()
         .merge(routes_test())
-        .merge(web::routes_login::routes())
+        .merge(routes_login::routes())
+        .nest("/api", routes_tickets::routes(mc.clone()))
         .layer(middleware::map_response(main_response_mapper))
         .layer(CookieManagerLayer::new())
         .fallback_service(routes_static());
@@ -37,6 +40,7 @@ async fn main() {
     println!("Listing on {:?}", addr);
 
     axum::serve(addr, routes_all).await.unwrap();
+    Ok(())
 }
 
 fn routes_test() -> Router {

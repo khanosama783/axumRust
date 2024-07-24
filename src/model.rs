@@ -1,5 +1,6 @@
 use crate::Result;
 use serde::{Deserialize, Serialize};
+use std::sync::MutexGuard;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug, Serialize)]
@@ -27,26 +28,26 @@ impl ModelController {
 }
 
 impl ModelController {
-    pub async fn create_ticket(&self, ticket_fc: TicketForCreate) {
-        let mut store = self.tickets_store.lock().unwrap();
-        let id = store.len() as u64;
-        let ticket = Ticket {
+    pub async fn create_ticket(&self, ticket_fc: TicketForCreate) -> Result<Ticket> {
+        let mut store: MutexGuard<Vec<Option<Ticket>>> = self.tickets_store.lock().unwrap();
+        let id: u64 = store.len() as u64;
+        let ticket: Ticket = Ticket {
             id,
             title: ticket_fc.title,
         };
         store.push(Some(ticket.clone()));
-        todo!()
+        Ok(ticket)
     }
 
     pub async fn list_tickets(&self) -> Result<Vec<Ticket>> {
-        let store = self.tickets_store.lock().unwrap();
-        let tickets = store.iter().filter_map(|t| t.clone()).collect();
+        let store: MutexGuard<Vec<Option<Ticket>>> = self.tickets_store.lock().unwrap();
+        let tickets: Vec<Ticket> = store.iter().filter_map(|t| t.clone()).collect();
         Ok(tickets)
     }
 
     pub async fn delete_ticket(&self, id: u64) -> Result<Ticket> {
-        let mut store = self.tickets_store.lock().unwrap();
-        let ticket = store.get_mut(id as usize).and_then(|t| t.take());
+        let mut store: MutexGuard<Vec<Option<Ticket>>> = self.tickets_store.lock().unwrap();
+        let ticket: Option<Ticket> = store.get_mut(id as usize).and_then(|t| t.take());
         ticket.ok_or(crate::Error::TicketDeleteFailIdNotFound { id })
     }
 }
